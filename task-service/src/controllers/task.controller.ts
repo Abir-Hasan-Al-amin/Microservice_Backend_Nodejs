@@ -1,6 +1,6 @@
+import { NextFunction, Request, Response } from "express";
 import Task from "../models/task.model";
-import { Request, Response, NextFunction } from "express";
-
+import { publishTaskEvent } from "../rabbitmq/publisher";
 // Create Task
 export const createTask = async (
   req: Request,
@@ -9,6 +9,12 @@ export const createTask = async (
 ) => {
   try {
     const task = await Task.create(req.body);
+    await publishTaskEvent({
+      event: "TASK_CREATED",
+      taskId: task._id,
+      userId: task.userId,
+      title: task.title,
+    });
     res.status(201).json({ success: true, task });
   } catch (err) {
     next(err);
